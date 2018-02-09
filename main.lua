@@ -9,7 +9,8 @@ map.posX = 0
 map.posY = 0
 
 local currentTile = 1
-local possibleTiles = {15,16,17,18}
+local possibleTilesSize = 19
+local possibleTiles = {15,16,17,18,33,34,35,36,51,52,53,54,113,114,115,116,117,118,119}
 
 local constants = {}
 constants.spriteSheet = "assets/Tilesheet/medieval_tilesheet.png"
@@ -43,13 +44,13 @@ function love.load()
 
 end
 
-function love.keypressed(key, scancode, isRepeat)
-	if key == 'a' and not(isRepeat) then
-		currentTile = (currentTile % 4) + 1
+function love.keypressed(key)
+	if key == 'a' then
+		currentTile = (currentTile % possibleTilesSize) + 1
 	end
 end
 
-function love.update()	
+function love.update(dt)	
 	if love.keyboard.isDown("z") then
 		map.posX = math.min(map.posX + 1,constants.mapSize - map.tilesCountX -1)
 	elseif love.keyboard.isDown("s") then
