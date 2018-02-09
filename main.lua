@@ -1,5 +1,6 @@
 
 local spriteSheet
+local spriteBatch
 local map = {}
 map.content = {}
 map.overlay = {}
@@ -17,8 +18,6 @@ constants.spriteSheet = "assets/Tilesheet/medieval_tilesheet.png"
 constants.tileSize = 64
 constants.tileMargin = 32
 constants.mapSize = 100
-constants.spriteSheetHeight = 704
-constants.spriteSheetWidth = 1760
 constants.spriteSheetColumn = 18
 
 function love.load()
@@ -41,8 +40,9 @@ function love.load()
 			i = i + 1
 		end
 	end
-
+	spriteBatch = love.graphics.newSpriteBatch(spriteSheet,2 * map.tilesCountX * map.tilesCountY)
 end
+
 
 function love.keypressed(key)
 	if key == 'a' then
@@ -64,42 +64,50 @@ function love.update(dt)
 		map.overlay[math.floor(love.mouse.getY()/constants.tileSize)+map.posY][math.floor(love.mouse.getX()/constants.tileSize)+map.posX] = possibleTiles[currentTile]
 	end
 
+	spriteBatch:clear()
+	for i = 0,map.tilesCountX  do
+		for j = 0, map.tilesCountY do
+			local relative_y = map.posY+j
+			local relative_x = map.posX+i
+			add_to_batch(i,j,map.content[relative_y][relative_x])
+			if map.overlay[relative_y][relative_x] > -1 then
+				add_to_batch(i,j,map.overlay[relative_y][relative_x])
+			end
+		end
+	end
+	spriteBatch:flush()
 end
 
-function build_quad(x,y)
-	return  love.graphics.newQuad(
-		constants.tileMargin + x * ( constants.tileMargin + constants.tileSize), 
-		constants.tileMargin + ( constants.tileMargin + constants.tileSize) * y, 
-		constants.tileSize, 
-		constants.tileSize,
-		constants.spriteSheetWidth,
-		constants.spriteSheetHeight)
-end
-
-function draw_exact_tile(x,y,tileNumber)
-	love.graphics.draw(spriteSheet,build_quad ((tileNumber-1) % constants.spriteSheetColumn,math.floor(tileNumber / constants.spriteSheetColumn)), x * constants.tileSize, y * constants.tileSize)	
-end
-
-function draw_tile(x,y,tileNumber)
+function add_to_batch(x,y,tileNumber)
 	if not(tileNumber) then
 		return
 	end
 	if x < 0 or y < 0 or x >= map.tilesCountX or y >= map.tilesCountY then
 		return
 	end
-	draw_exact_tile(x, y, tileNumber)
+	spriteBatch:add(build_quad (tileNumber),x * constants.tileSize, y * constants.tileSize)
 end
 
+function build_quad(tileNumber)
+	local x = (tileNumber-1) % constants.spriteSheetColumn
+	local y = math.floor(tileNumber / constants.spriteSheetColumn)
+	return  love.graphics.newQuad(
+		constants.tileMargin + x * ( constants.tileMargin + constants.tileSize), 
+		constants.tileMargin + ( constants.tileMargin + constants.tileSize) * y, 
+		constants.tileSize, 
+		constants.tileSize,
+		spriteSheet:getWidth(),
+		spriteSheet:getHeight())
+end
+
+function draw_exact_tile(x,y,tileNumber)
+	love.graphics.draw(spriteSheet,build_quad ( tileNumber ), x * constants.tileSize, y * constants.tileSize)	
+end
+
+
+
+
 function love.draw()
-	for i = 0,map.tilesCountX  do
-		for j = 0, map.tilesCountY do
-			local relative_y = map.posY+j
-			local relative_x = map.posX+i
-			draw_tile(i,j,map.content[relative_y][relative_x])
-			if map.overlay[relative_y][relative_x] > -1 then
-				draw_tile(i,j,map.overlay[relative_y][relative_x])
-			end
-		end
-	end
+	love.graphics.draw(spriteBatch)
 	draw_exact_tile(math.floor(love.mouse.getX()/constants.tileSize),math.floor(love.mouse.getY()/constants.tileSize),possibleTiles[currentTile])
 end
