@@ -51,17 +51,17 @@ function love.keypressed(key)
 end
 
 function love.update(dt)	
-	if love.keyboard.isDown("z") then
+	if love.keyboard.isDown("d") then
 		map.posX = math.min(map.posX + 1,constants.mapSize - map.tilesCountX -1)
 	elseif love.keyboard.isDown("s") then
 		map.posY = math.min(map.posY + 1,constants.mapSize - map.tilesCountY - 1)
 	elseif love.keyboard.isDown("q") then
 		map.posX = math.max(map.posX - 1,0)
-	elseif love.keyboard.isDown("d") then 
+	elseif love.keyboard.isDown("z") then 
 		map.posY = math.max(map.posY - 1,0)
 	end
 	if(love.mouse.isDown(1)) then
-		map.overlay[math.floor(love.mouse.getY()/constants.tileSize)][math.floor(love.mouse.getX()/constants.tileSize)] = possibleTiles[currentTile]
+		map.overlay[math.floor(love.mouse.getY()/constants.tileSize)+map.posY][math.floor(love.mouse.getX()/constants.tileSize)+map.posX] = possibleTiles[currentTile]
 	end
 
 end
@@ -102,4 +102,4 @@ function love.draw()
 		end
 	end
 	draw_exact_tile(math.floor(love.mouse.getX()/constants.tileSize),math.floor(love.mouse.getY()/constants.tileSize),possibleTiles[currentTile])
-end 
+end
