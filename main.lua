@@ -10,7 +10,8 @@ map.tileSize = 126
 map.posX = 0
 map.posY = 0
 
-local currentTile = 15
+local currentTile = 1
+local possibleTiles = {15,16,17,18}
 
 function love.load()
 	spriteSheet = love.graphics.newImage("assets/Tilesheet/medieval_tilesheet.png")
@@ -35,18 +36,24 @@ function love.load()
 
 end
 
-function love.update()
-	if love.keyboard.isDown("right") then
+function love.keypressed(key, scancode, isRepeat)
+	if key == 'a' and not(isRepeat) then
+		currentTile = (currentTile % 4) + 1
+	end
+end
+
+function love.update()	
+	if love.keyboard.isDown("z") then
 		map.posX = math.min(map.posX + 1,100 - map.tilesCountX -1)
-	elseif love.keyboard.isDown("down") then
+	elseif love.keyboard.isDown("s") then
 		map.posY = math.min(map.posY + 1,100 - map.tilesCountY - 1)
-	elseif love.keyboard.isDown("left") then
+	elseif love.keyboard.isDown("q") then
 		map.posX = math.max(map.posX - 1,0)
-	elseif love.keyboard.isDown("up") then 
+	elseif love.keyboard.isDown("d") then 
 		map.posY = math.max(map.posY - 1,0)
 	end
 	if(love.mouse.isDown(1)) then
-		map.overlay[math.floor(love.mouse.getY()/64)][math.floor(love.mouse.getX()/64)] = currentTile
+		map.overlay[math.floor(love.mouse.getY()/64)][math.floor(love.mouse.getX()/64)] = possibleTiles[currentTile]
 	end
 
 end
@@ -80,5 +87,5 @@ function love.draw()
 			end
 		end
 	end
-	draw_exact_tile(math.floor(love.mouse.getX()/64),math.floor(love.mouse.getY()/64),currentTile)
+	draw_exact_tile(math.floor(love.mouse.getX()/64),math.floor(love.mouse.getY()/64),possibleTiles[currentTile])
 end 
