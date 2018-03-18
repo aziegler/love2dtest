@@ -20,8 +20,13 @@ local max_player = 4
 
 local playing = true
 
+local function create_character(player, coords)
+	local character = {coord = coords, pv = 10}
+	table.insert (player.characters, character)
+end
+
 local function create_player(tileId, index)
-	table.insert(players,{perso = tileId, coord = nil, placed = false, moving = false, pv = 10, idx = index})
+	table.insert(players,{perso = tileId, characters = {}, placed = false, idx = index, moving = nil})
 end
 
 local function create_village()
@@ -36,8 +41,10 @@ end
 
 local function get_player_at(x,y)
 	for idx,player_2 in pairs(players) do
-		if (player_2.coord.x == x and player_2.coord.y == y) then
-			return idx, player_2
+		for idx_c, character in pairs (player_2.characters) do
+			if (character.coord.x == x and character.coord.y == y) then
+				return idx, player_2, idx_c, character
+			end
 		end
 	end
 	return nil
@@ -67,7 +74,9 @@ end
 function love.keypressed(key)
 	if key == 'space' and not playing then
 		player = (player % max_player) + 1
-		if get_current_player() == nil then
+		local count = table.getn(get_current_player().characters)
+		print ("Player "..player.." has "..count.." characters")
+		if  count == 0 then
 			change_turn()
 		end
 		playing = true
@@ -87,27 +96,32 @@ function love.mousepressed(x,y,button)
 	end
 	if not get_current_player().placed then
 		tiles.discover_at_mouse(2,2,get_current_player().idx)
-		get_current_player().coord = tiles.get_mouse_coordinates()
+		create_character(get_current_player(), tiles.get_mouse_coordinates())
 		get_current_player().placed = true
 		change_turn()
 		return
 	end
 
 	local coord = tiles.get_mouse_coordinates()
-
+	local idx, joueur_attaque, idx_c, perso_attaque = get_player_at(coord.x, coord.y)
+	local idx_village, village_attaque = get_village_at(coord.x, coord.y)
+	
 	if get_current_player().moving then
-		if math.abs(get_current_player().coord.x - coord.x) <= 1 and math.abs(get_current_player().coord.y - coord.y) <= 1 then
-			local idx, joueur_attaque = get_player_at(coord.x, coord.y)
-			local idx_village, village_attaque = get_village_at(coord.x, coord.y)
+		if math.abs(get_current_player().moving.coord.x - coord.x) <= 1 and math.abs(get_current_player().moving.coord.y - coord.y) <= 1 then
 			if joueur_attaque and not (idx == player) then
-				get_current_player().moving = false
+				get_current_player().moving = nil
 				change_turn()
-				joueur_attaque.pv = joueur_attaque.pv - 5
-				if joueur_attaque.pv < 1 then
-					table.remove (players, idx)
-					max_player = max_player - 1
-					if player > idx then
-						player = player - 1				
+				perso_attaque.pv = perso_attaque.pv - 5
+				if perso_attaque.pv < 1 then
+					print("Killing "..idx_c)
+					table.remove (joueur_attaque.characters, idx_c)
+					local count = table.getn(joueur_attaque.characters)
+					if count == 0 then
+						table.remove (players, idx)
+    					max_player = max_player - 1
+						if player > idx then
+							player = player - 1				
+						end
 					end
 				end
 				return
@@ -116,20 +130,29 @@ function love.mousepressed(x,y,button)
 				change_turn()
 				village_attaque.tile = village[get_current_player().idx + 1]
 				village_attaque.proprio = get_current_player().idx
+				return
 			else
 				tiles.discover_at_mouse(1,1,get_current_player().idx)
-				get_current_player().coord = coord
-				get_current_player().moving = false
+				get_current_player().moving.coord = coord
+				get_current_player().moving = nil
 				change_turn()
 				return
 			end
 		end
 	end
 
-	if get_current_player().coord.x == coord.x and get_current_player().coord.y == coord.y then
-		get_current_player().moving = true
+	if idx == player then
+		get_current_player().moving = perso_attaque
 		return
 	end
+	
+	if village_attaque and village_attaque.proprio == get_current_player().idx then
+		create_character(get_current_player(),village_attaque.coord)
+		change_turn()
+		return
+	end 
+
+	
 end
 
 function appartient(elt, tableau)

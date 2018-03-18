@@ -81,6 +81,26 @@ local function get_tile_coordinates(x,y)
 	return screen_x, screen_y
 end
 
+local function get_player_at(x,y,players)
+	for idx,player_2 in pairs(players) do
+		for idx_c, character in pairs (player_2.characters) do
+			if (character.coord.x == x and character.coord.y == y) then
+				return idx, player_2, idx_c, character
+			end
+		end
+	end
+	return nil
+end
+
+local function get_village_at(x,y,villages)
+	for idx,village in pairs(villages) do
+		if (village.coord.x == x and village.coord.y == y) then
+			return idx, village
+		end
+	end
+	return nil
+end
+
 local function update(current_player,players,villages)
 	spriteBatch:clear()
 	for i = 0,map.tilesCountX  do
@@ -105,30 +125,19 @@ local function update(current_player,players,villages)
 		end
 	end
 	for idx,player in pairs(players) do
-		if player.placed then
-			local relative_y = player.coord.x - map.posY
-			local relative_x = player.coord.y - map.posX
-			
-			if player.moving then
+		for idx_c, character in pairs (player.characters) do
+			local relative_y = character.coord.x - map.posY
+			local relative_x = character.coord.y - map.posX
+			if player.moving == character then
 				for i = -1,1 do
 					for j = -1,1 do
 						if not (i == 0) or not (j == 0) then
-							local x_clique = player.coord.x - i
-							local y_clique = player.coord.y - j
+							local x_clique = character.coord.x - i
+							local y_clique = character.coord.y - j
 							local attaque = false
-							for idx,player_2 in pairs(players) do
-								if (player_2.coord.x == x_clique and player_2.coord.y == y_clique) then
-									attaque = true
-									break
-								end
-							end
-							for idx,village in pairs(villages) do
-								if (village.coord.x == x_clique and village.coord.y == y_clique) then
-									attaque = true
-									break
-								end
-							end
-							if attaque then
+							local _,player,_,found_character = get_player_at(x_clique,y_clique,players)
+							local _, village = get_village_at(x_clique,y_clique,villages)
+							if found_character or village then
 								add_to_batch(relative_x - j, relative_y - i, case_attaque)
 							else
 								add_to_batch(relative_x - j, relative_y - i, case_possible)
@@ -150,12 +159,13 @@ end
 local function draw(current_player,players)
 	love.graphics.draw(spriteBatch)
 	for idx,player in pairs(players) do
-		if player.placed and map.player_known[current_player.idx][player.coord.x][player.coord.y] then
-			love.graphics.setColor(0, 0, 0)
-			local x,y = get_tile_coordinates(player.coord.x,player.coord.y)
-			print("X "..x.."Y "..y)
-			love.graphics.print(player.pv.." ",y + 22,x - 3,0,1,1)
-			love.graphics.setColor(255, 255, 255)
+		for idx_c, character in pairs(player.characters) do
+			if map.player_known[current_player.idx][character.coord.x][character.coord.y] then
+				love.graphics.setColor(0, 0, 0)
+				local x,y = get_tile_coordinates(character.coord.x,character.coord.y)
+				love.graphics.print(character.pv.." ",y + 22,x - 3,0,1,1)
+				love.graphics.setColor(255, 255, 255)
+			end
 		end
 	end
 end
